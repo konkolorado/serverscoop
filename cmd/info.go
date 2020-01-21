@@ -19,7 +19,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"http"
+	"net/http"
 
 	"github.com/spf13/cobra"
 )
