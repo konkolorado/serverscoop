@@ -16,7 +16,7 @@ limitations under the License.
 
 package main
 
-import "serverscoop/cmd"
+import "github.com/konkolorado/serverscoop/cmd"
 
 func main() {
 	cmd.Execute()
