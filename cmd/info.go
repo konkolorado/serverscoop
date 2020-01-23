@@ -17,10 +17,14 @@ limitations under the License.
 package cmd
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
-	//"net/http"
+ 	"io/ioutil"
+	"net/http"
 
+ 	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
 )
 
@@ -51,11 +55,38 @@ Use with the -o flag to control the output's format
 Examples:
 serverscoop info server1
 serverscoop info server1 server2 -o json`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("info called with", opts.outputFormat)
-
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) < 1 {
+			return fmt.Errorf("requires at least 1 arg(s), only received %d",
+												len(args))
+		}
 		if err := opts.Validate(); err != nil {
 			return err
+		}
+		return nil
+	},
+	RunE: func(cmd *cobra.Command, args []string) error {
+		payload, err := json.Marshal(map[string]string{
+		    "url": args[0],
+		})
+		if err != nil {
+			return err
+		}
+
+		resp, err := http.Post("https://cleanuri.com/api/v1/shorten", "application/json",
+													bytes.NewBuffer(payload))
+		if err != nil {
+			return err
+		}
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+
+		if opts.outputFormat == "json" {
+			fmt.Println(string(bodyBytes))
+		}
+		if opts.outputFormat == "yaml" {
+			respBytes := []byte(bodyBytes)
+			y, _ := yaml.JSONToYAML(respBytes)
+			fmt.Println(y)
 		}
 		return nil
 	},
