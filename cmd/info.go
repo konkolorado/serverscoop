@@ -21,10 +21,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
- 	"io/ioutil"
+	"io/ioutil"
 	"net/http"
 
- 	"github.com/ghodss/yaml"
+	"github.com/ghodss/yaml"
 	"github.com/spf13/cobra"
 )
 
@@ -58,7 +58,7 @@ serverscoop info server1 server2 -o json`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
 			return fmt.Errorf("requires at least 1 arg(s), only received %d",
-												len(args))
+				len(args))
 		}
 		if err := opts.Validate(); err != nil {
 			return err
@@ -67,14 +67,14 @@ serverscoop info server1 server2 -o json`,
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		payload, err := json.Marshal(map[string]string{
-		    "url": args[0],
+			"url": args[0],
 		})
 		if err != nil {
 			return err
 		}
 
 		resp, err := http.Post("https://cleanuri.com/api/v1/shorten", "application/json",
-													bytes.NewBuffer(payload))
+			bytes.NewBuffer(payload))
 		if err != nil {
 			return err
 		}
