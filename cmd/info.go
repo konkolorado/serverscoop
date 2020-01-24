@@ -17,14 +17,15 @@ limitations under the License.
 package cmd
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
+  "time"
 
-	"github.com/ghodss/yaml"
+  "gopkg.in/yaml.v2"
 	"github.com/spf13/cobra"
 )
 
@@ -32,6 +33,33 @@ import (
 // settable options
 type Options struct {
 	outputFormat string
+}
+
+type Fact struct {
+	Text string `yaml:"Text"`
+}
+
+type Name struct {
+	First string `json:"first"`
+	Last string `json:"last"`
+}
+
+type User struct {
+	Id string `json:"_id"`
+	Name Name `json:"name"`
+}
+
+type CatFactsList struct {
+	Id string `json:"_id"`
+	Text string `json:"text"`
+	Type string `json:"type"`
+	User User `json:"user"`
+	Upvotes string `json:"upvotes"`
+	UserUpvoted string `json:"userUpvoted"`
+}
+
+type CatFactsAPIResponse struct {
+	CatFactsList []CatFactsList `json:"all"`
 }
 
 // Validate will check that the options provided to the subcommand are valid
@@ -66,27 +94,35 @@ serverscoop info server1 server2 -o json`,
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		payload, err := json.Marshal(map[string]string{
-			"url": args[0],
-		})
-		if err != nil {
-			return err
-		}
-
-		resp, err := http.Post("https://cleanuri.com/api/v1/shorten", "application/json",
-			bytes.NewBuffer(payload))
+		resp, err := http.Get("https://cat-fact.herokuapp.com/facts")
 		if err != nil {
 			return err
 		}
 		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+
+		var catFacts CatFactsAPIResponse
+		json.Unmarshal([]byte(bodyBytes), &catFacts)
+
+		rand.Seed(time.Now().Unix()) // initialize global pseudo random generator
+		randomFactIndex := rand.Intn(len(catFacts.CatFactsList))
+		fact := Fact{Text: catFacts.CatFactsList[randomFactIndex].Text}
 
 		if opts.outputFormat == "json" {
-			fmt.Println(string(bodyBytes))
+			factJSON, err := json.Marshal(fact)
+			if err != nil {
+				return err
+			}
+			fmt.Println(string(factJSON))
 		}
 		if opts.outputFormat == "yaml" {
-			respBytes := []byte(bodyBytes)
-			y, _ := yaml.JSONToYAML(respBytes)
-			fmt.Println(y)
+			factYAML, err := yaml.Marshal(fact)
+			if err != nil {
+				return err
+			}
+			fmt.Print(string(factYAML))
 		}
 		return nil
 	},
