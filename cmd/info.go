@@ -23,10 +23,10 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"net/http"
-  "time"
+	"time"
 
-  "gopkg.in/yaml.v2"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 )
 
 // flags is a struct that will grow and contain all of this subcommand's
@@ -41,20 +41,20 @@ type fact struct {
 
 type name struct {
 	first string `json:"first"`
-	last string `json:"last"`
+	last  string `json:"last"`
 }
 
 type user struct {
-	id string `json:"_id"`
-	name name `json:"name"`
+	id   string `json:"_id"`
+	name name   `json:"name"`
 }
 
 type catFactsList struct {
-	Id string `json:"_id"`
-	Text string `json:"text"`
-	Type string `json:"type"`
-	User user `json:"user"`
-	Upvotes string `json:"upvotes"`
+	Id          string `json:"_id"`
+	Text        string `json:"text"`
+	Type        string `json:"type"`
+	User        user   `json:"user"`
+	Upvotes     string `json:"upvotes"`
 	UserUpvoted string `json:"userUpvoted"`
 }
 
