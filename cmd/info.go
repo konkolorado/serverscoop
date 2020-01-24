@@ -29,48 +29,40 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Options is a struct that will grow and contain all of this subcommand's
-// settable options
-type Options struct {
+// flags is a struct that will grow and contain all of this subcommand's
+// settable flags
+type flags struct {
 	outputFormat string
 }
 
-type Fact struct {
-	Text string `yaml:"Text"`
+type fact struct {
+	Text string `yaml:"Text" json:"Text"`
 }
 
-type Name struct {
-	First string `json:"first"`
-	Last string `json:"last"`
+type name struct {
+	first string `json:"first"`
+	last string `json:"last"`
 }
 
-type User struct {
-	Id string `json:"_id"`
-	Name Name `json:"name"`
+type user struct {
+	id string `json:"_id"`
+	name name `json:"name"`
 }
 
-type CatFactsList struct {
+type catFactsList struct {
 	Id string `json:"_id"`
 	Text string `json:"text"`
 	Type string `json:"type"`
-	User User `json:"user"`
+	User user `json:"user"`
 	Upvotes string `json:"upvotes"`
 	UserUpvoted string `json:"userUpvoted"`
 }
 
-type CatFactsAPIResponse struct {
-	CatFactsList []CatFactsList `json:"all"`
+type catFactsAPIResponse struct {
+	CatFactsList []catFactsList `json:"all"`
 }
 
-// Validate will check that the options provided to the subcommand are valid
-func (opts *Options) Validate() error {
-	if opts.outputFormat != "yaml" && opts.outputFormat != "json" {
-		return errors.New("--output must be 'yaml' or 'json'")
-	}
-	return nil
-}
-
-var opts Options
+var opts flags
 
 var infoCmd = &cobra.Command{
 	Use:   "info",
@@ -83,17 +75,12 @@ Use with the -o flag to control the output's format
 Examples:
 serverscoop info server1
 serverscoop info server1 server2 -o json`,
-	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) < 1 {
-			return fmt.Errorf("requires at least 1 arg(s), only received %d",
-				len(args))
-		}
-		if err := opts.Validate(); err != nil {
+	Args: cobra.MinimumNArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if err := opts.validate(); err != nil {
 			return err
 		}
-		return nil
-	},
-	RunE: func(cmd *cobra.Command, args []string) error {
+
 		resp, err := http.Get("https://cat-fact.herokuapp.com/facts")
 		if err != nil {
 			return err
@@ -103,12 +90,9 @@ serverscoop info server1 server2 -o json`,
 			return err
 		}
 
-		var catFacts CatFactsAPIResponse
+		var catFacts catFactsAPIResponse
 		json.Unmarshal([]byte(bodyBytes), &catFacts)
-
-		rand.Seed(time.Now().Unix()) // initialize global pseudo random generator
-		randomFactIndex := rand.Intn(len(catFacts.CatFactsList))
-		fact := Fact{Text: catFacts.CatFactsList[randomFactIndex].Text}
+		fact := randomFact(catFacts.CatFactsList)
 
 		if opts.outputFormat == "json" {
 			factJSON, err := json.Marshal(fact)
@@ -132,4 +116,19 @@ func init() {
 	rootCmd.AddCommand(infoCmd)
 	infoCmd.Flags().StringVarP(&opts.outputFormat, "output", "o", "yaml",
 		"Output format (yaml|json)")
+}
+
+// Validate will check that the options provided to the subcommand are valid
+func (opts *flags) validate() error {
+	if opts.outputFormat != "yaml" && opts.outputFormat != "json" {
+		return errors.New("--output must be 'yaml' or 'json'")
+	}
+	return nil
+}
+
+// Return a random cat fact from the API response
+func randomFact(list []catFactsList) fact {
+	rand.Seed(time.Now().Unix()) // initialize global pseudo random generator
+	randomIndex := rand.Intn(len(list))
+	return fact{Text: list[randomIndex].Text}
 }
