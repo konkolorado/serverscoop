@@ -21,6 +21,12 @@
   it is exported and can be used in other packages that import
   the package
 
+- Use gofmt [file, directory] to format your code. Use the -w flag
+  to write the changes that gofmt would make directly back into the
+  go source files. Use the -s flag to also attempt to simplify code
+
+- The variable naming convention in go is MixedCaps or mixedCaps
+
 
 - Check your current go environment
   ```go env [ENV_VAR]```
