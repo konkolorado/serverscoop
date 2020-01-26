@@ -17,28 +17,52 @@ limitations under the License.
 package cmd
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
-	//"net/http"
+	"io/ioutil"
+	"math/rand"
+	"net/http"
+	"time"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 )
 
-// Options is a struct that will grow and contain all of this subcommand's
-// settable options
-type Options struct {
+// flags is a struct that will grow and contain all of this subcommand's
+// settable flags
+type flags struct {
 	outputFormat string
 }
 
-// Validate will check that the options provided to the subcommand are valid
-func (opts *Options) Validate() error {
-	if opts.outputFormat != "yaml" && opts.outputFormat != "json" {
-		return errors.New("--output must be 'yaml' or 'json'")
-	}
-	return nil
+type fact struct {
+	Text string `yaml:"Text" json:"Text"`
 }
 
-var opts Options
+type name struct {
+	first string `json:"first"`
+	last  string `json:"last"`
+}
+
+type user struct {
+	id   string `json:"_id"`
+	name name   `json:"name"`
+}
+
+type catFactsList struct {
+	Id          string `json:"_id"`
+	Text        string `json:"text"`
+	Type        string `json:"type"`
+	User        user   `json:"user"`
+	Upvotes     string `json:"upvotes"`
+	UserUpvoted string `json:"userUpvoted"`
+}
+
+type catFactsAPIResponse struct {
+	CatFactsList []catFactsList `json:"all"`
+}
+
+var opts flags
 
 var infoCmd = &cobra.Command{
 	Use:   "info",
@@ -51,11 +75,38 @@ Use with the -o flag to control the output's format
 Examples:
 serverscoop info server1
 serverscoop info server1 server2 -o json`,
+	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("info called with", opts.outputFormat)
-
-		if err := opts.Validate(); err != nil {
+		if err := opts.validate(); err != nil {
 			return err
+		}
+
+		resp, err := http.Get("https://cat-fact.herokuapp.com/facts")
+		if err != nil {
+			return err
+		}
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+
+		var catFacts catFactsAPIResponse
+		json.Unmarshal([]byte(bodyBytes), &catFacts)
+		fact := randomFact(catFacts.CatFactsList)
+
+		if opts.outputFormat == "json" {
+			factJSON, err := json.Marshal(fact)
+			if err != nil {
+				return err
+			}
+			fmt.Println(string(factJSON))
+		}
+		if opts.outputFormat == "yaml" {
+			factYAML, err := yaml.Marshal(fact)
+			if err != nil {
+				return err
+			}
+			fmt.Print(string(factYAML))
 		}
 		return nil
 	},
@@ -65,4 +116,19 @@ func init() {
 	rootCmd.AddCommand(infoCmd)
 	infoCmd.Flags().StringVarP(&opts.outputFormat, "output", "o", "yaml",
 		"Output format (yaml|json)")
+}
+
+// Validate will check that the options provided to the subcommand are valid
+func (opts *flags) validate() error {
+	if opts.outputFormat != "yaml" && opts.outputFormat != "json" {
+		return errors.New("--output must be 'yaml' or 'json'")
+	}
+	return nil
+}
+
+// Return a random cat fact from the API response
+func randomFact(list []catFactsList) fact {
+	rand.Seed(time.Now().Unix()) // initialize global pseudo random generator
+	randomIndex := rand.Intn(len(list))
+	return fact{Text: list[randomIndex].Text}
 }
