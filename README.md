@@ -27,6 +27,65 @@
 
 - The variable naming convention in go is MixedCaps or mixedCaps
 
+- Functions and methods can return multiple values. A common idiom is to
+  return a result as well as the error which the calling function can check
+  if is nil or not.
+
+- Functions and methods can name their return values. This lets the values
+  be used as regular variables (like incoming parameters) -- at function start,
+  they are initialized to zero values for their type. If the function or
+  method returns with no args, the current values of the return params are
+  used as the returned values.
+
+- Go has a defer keyword which schedules a function call to be run immediately
+  (right before) before the calling function returns. Arguments to the deferred
+  function are evaluated when the defer executes, not when the call executes.
+
+- new() is a way of allocating memory. new(T) zeroes out the new storage
+  according to what the zero value of T's type is. It returns a pointer to the
+  space.
+
+- make() can only create slices, maps and channels and returns an uninitialized
+  value of type T.
+
+- Passing an array to a function will cause the function to receive a copy of
+  the array, not a pointer to it. Also, the size of the array is part of its
+  type. Passing pointers to an array to a function, however, isn't idiomatic
+  and this functionality should instead be provided by using Slices
+
+- Slices wrap arrays and are more convenient when dealing with sequences of
+  data. They hold a reference to the underlying array and if you assign one
+  slice to another, they both refer to the same array.  Changes that one slice
+  makes to the array will be visible to other slices. The length of a slice
+  may be changed as long as it's still in the limits of the underlying array
+
+- Maps are dicts. Maps hold references to the underlying data structure so if
+  a function modifies that contents of a map, changes will be available outside
+  the function. Lookups for a key that doesn't exist will return the zero value
+  of the map's key type. To distinguish between zero values and missing keys,
+  check the error return via the "comma ok" idiom.
+
+- Variables can be initialized like constants but the initializer can be an
+  expression evaluated at run time i.e. home = os.Getenv("HOME")
+
+- Each source file can have its own [multiple] init() to set up required state
+  or verify correctness of program state before real execution begins. init()
+  is called after the variable declarations in a package and those are evaluated
+  after the imported packages have been initialized.
+
+- It can be useful to import a package only for its side effects. To do this,
+  rename the package to the blank identifier i.e. import _ "net/http/pprof"
+
+- A goroutine has a simple model: it is a function executing concurrently with
+  other goroutines in the same address space. Goroutines are multiplexed onto
+  multiple OS threads so if one should block, such as while waiting for I/O,
+  others continue to run.
+
+- There is a built-in panic() function panic that in effect creates a run-time
+  error that will stop the program
+
+- You can use recover() to regain control of a goroutine that is unwinding due
+  to a panic
 
 - Check your current go environment
   ```go env [ENV_VAR]```
