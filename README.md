@@ -87,6 +87,9 @@
 - You can use recover() to regain control of a goroutine that is unwinding due
   to a panic
 
+- Only exported types, variables, constants, functions, or packages get their
+  documentation formatted via godoc
+
 - Check your current go environment
   ```go env [ENV_VAR]```
 
